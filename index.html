@@ -130,15 +130,18 @@
       const message = messageInput.value.trim();
       if (!message) return;
 
-      // 요청 시작: 버튼 비활성화, 상태 초기화
       setLoading(true);
       replyBox.style.display = "none";
 
       try {
-        const res = await fetch(`${API_URL}/api/chat`, {
+        const res = await fetch(`${API_URL}/api/message`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message }),
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            text: message
+          })
         });
 
         if (!res.ok) {
@@ -146,10 +149,10 @@
         }
 
         const data = await res.json();
-        showReply(data.reply); // 백엔드 응답 형식 { reply: "..." } 가정
+        showReply(data.reply);
       } catch (err) {
-        showError("메시지를 보내는 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.");
         console.error(err);
+        showError(err.message);
       } finally {
         setLoading(false);
       }
