@@ -7,7 +7,7 @@ app = FastAPI()
 # 1. CORS 설정 (실제 프론트엔드 주소로 변경하세요)
 allow_origins = [
     "http://localhost:3000",  # 로컬 테스트용
-    # "https://your-frontend-domain.com" # 실제 배포용
+    "https://teammallang.github.io/MallangTest/" # 실제 배포용
 ]
 
 app.add_middleware(
