@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mallang 채팅</title>
+<style>
+  /* ===== UI/UX 담당자가 자유롭게 수정하는 영역 ===== */
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, "Pretendard", sans-serif;
+    background: #f7f7fb;
+    margin: 0;
+    padding: 40px 16px;
+  }
+
+  .chat-container {
+    max-width: 480px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  #message-input {
+    flex: 1;
+    padding: 12px 18px;
+    border: 1px solid #ddd;
+    border-radius: 999px;
+    outline: none;
+    font-size: 15px;
+  }
+
+  #message-input:focus {
+    border-color: #6366f1;
+  }
+
+  #send-button {
+    padding: 12px 22px;
+    border: none;
+    border-radius: 999px;
+    background: #6366f1;
+    color: white;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  #send-button:hover:not(:disabled) {
+    background: #4f46e5;
+  }
+
+  #send-button:disabled {
+    background: #c7c7d1;
+    cursor: not-allowed;
+  }
+
+  #status-text {
+    font-size: 13px;
+    color: #888;
+    min-height: 18px;
+  }
+
+  #status-text.error {
+    color: #ef4444;
+  }
+
+  #reply-box {
+    display: none;
+    background: #eef2ff;
+    border-radius: 14px;
+    padding: 16px 18px;
+  }
+
+  #reply-box .reply-label {
+    font-size: 12px;
+    color: #888;
+    margin: 0 0 6px 0;
+  }
+
+  #reply-box .reply-text {
+    margin: 0;
+    color: #222;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+  /* ===== 수정 영역 끝 ===== */
+</style>
+</head>
+<body>
+
+  <div class="chat-container">
+    <div class="input-row">
+      <input
+        type="text"
+        id="message-input"
+        placeholder="보내려는 메시지를 입력하세요"
+      />
+      <button id="send-button">전송</button>
+    </div>
+
+    <p id="status-text"></p>
+
+    <div id="reply-box">
+      <p class="reply-label">Mallang의 피드백</p>
+      <p class="reply-text" id="reply-text"></p>
+    </div>
+  </div>
+
+  <script>
+    // ===== 로직 영역: 프론트엔드 담당자가 관리 =====
+
+    // 배포 시엔 실제 백엔드 주소로 교체 (예: https://mallang-backend.onrender.com)
+    const API_URL = "http://mallangtest.onrender.com";
+
+    const messageInput = document.getElementById("message-input");
+    const sendButton = document.getElementById("send-button");
+    const statusText = document.getElementById("status-text");
+    const replyBox = document.getElementById("reply-box");
+    const replyText = document.getElementById("reply-text");
+
+    async function sendMessage() {
+      const message = messageInput.value.trim();
+      if (!message) return;
+
+      // 요청 시작: 버튼 비활성화, 상태 초기화
+      setLoading(true);
+      replyBox.style.display = "none";
+
+      try {
+        const res = await fetch(`${API_URL}/api/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message }),
+        });
+
+        if (!res.ok) {
+          throw new Error(`서버 응답 오류 (${res.status})`);
+        }
+
+        const data = await res.json();
+        showReply(data.reply); // 백엔드 응답 형식 { reply: "..." } 가정
+      } catch (err) {
+        showError("메시지를 보내는 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function setLoading(isLoading) {
+      sendButton.disabled = isLoading;
+      messageInput.disabled = isLoading;
+      sendButton.textContent = isLoading ? "전송 중..." : "전송";
+      statusText.textContent = isLoading ? "답변을 기다리는 중이에요..." : "";
+      statusText.classList.remove("error");
+    }
+
+    function showReply(text) {
+      replyText.textContent = text;
+      replyBox.style.display = "block";
+    }
+
+    function showError(message) {
+      statusText.textContent = message;
+      statusText.classList.add("error");
+    }
+
+    // 버튼 클릭 시 전송
+    sendButton.addEventListener("click", sendMessage);
+
+    // Enter 키로도 전송 (Shift+Enter는 줄바꿈으로 남겨둠)
+    messageInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+  </script>
+
+</body>
+</html>
