@@ -1,252 +1,402 @@
-// ────────────────────────────────────────────────────────────────────────────
-// 말랑 — app.js (깡통 UI 버전)
-//
-// ⚠️ 이 파일은 실제 기능(인증, 번역 API, 대화 저장 등)이 전부 빠진 상태입니다.
-//    각 TODO 주석 자리에 백엔드/프론트엔드 담당자가 실제 로직을 채워 넣으면 됩니다.
-//    페이지 전환, 애니메이션, 드롭다운 열고 닫기 같은 순수 UI 동작만 살아있어서
-//    디자인/레이아웃 확인용으로 그대로 클릭해볼 수 있습니다.
-// ────────────────────────────────────────────────────────────────────────────
+// =====================================================================
+// 말랑(Mallang) 프론트엔드 ↔ 백엔드(solo.py) 중계 스크립트
+// main.html / assignment.html / chat.html 세 페이지에서 공통으로 로드됩니다.
+// 현재 페이지에 어떤 요소가 있는지 감지해서 그 페이지에 맞는 로직만 실행합니다.
+// =====================================================================
 
-document.addEventListener("DOMContentLoaded", () => {
-  const root = document.getElementById("mallang-root");
+// ---------------------------------------------------------------
+// 0. 공통 설정
+// ---------------------------------------------------------------
+const CONFIG = {
+  // TODO: 배포 시 실제 백엔드 주소로 교체하세요 (예: https://mallang-backend.onrender.com)
+  API_BASE: "http://127.0.0.1:8000",
 
-  // ── UI 표시용 정적 데이터 (드롭다운 옵션 목록) ─────────────────
-  // TODO(backend): 필요 시 서버 API에서 지역/직종 목록을 받아오도록 교체 가능
-  const REGIONS = ["서울","부산","대구","인천","광주","대전","울산","경기","강원","충북","충남","전북","전남","경북","경남","제주"];
-  const JOBS    = ["IT / 개발","마케팅 / 홍보","영업 / 영업관리","인사 / 총무","회계 / 재무","디자인 / 크리에이티브","제조 / 생산","의료 / 제약","교육 / 강사","법률 / 법무","건설 / 시공","유통 / 물류"];
+  // ⚠️ 임시 샘플 목록입니다. 실제 지역/직종 목록으로 교체해주세요.
+  REGIONS: [
+    "서울", "경기", "인천", "부산", "대구", "대전", "광주", "울산",
+    "세종", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"
+  ],
+  JOBS: [
+    "사무/기획", "마케팅/홍보", "영업", "개발/IT", "디자인",
+    "인사/총무", "재무/회계", "고객서비스", "생산/제조", "교육", "의료/복지", "기타"
+  ],
 
-  const WELCOME = "안녕하세요! 저는 말랑이에요 😊\n\n\"그 말, 말랑하게 다시 해볼까요?\"\n\n하고 싶은 말을 솔직하게 입력하면, 직장에서 통하는 부드러운 언어로 바꿔드릴게요.\n\n근무 지역과 직종을 설정하면 더 딱 맞는 번역을 해드릴 수 있어요!";
+  SESSION_KEY: "mallang_session" // localStorage에 로그인 정보를 저장할 키
+};
 
-  // ── UI 상태값 (화면 표시용, 실제 저장/인증과는 무관) ─────────────
-  let agreed = false, region = "", job = "";
-  let curConvId = null;
-  let curMsgs = [{ role: "bot", text: WELCOME }];
-
-  // TODO(backend): 로그인한 사용자의 대화 목록을 서버에서 받아와 채워주세요.
-  let convList = [];
-
-  // ── DOM 헬퍼 ──────────────────────────────────────────────
-  const $  = (id) => root.querySelector("#" + id);
-  const $$ = (sel) => root.querySelectorAll(sel);
-
-  function goTo(id) {
-    $$(".page").forEach(p => p.classList.remove("active"));
-    $("page-" + id).classList.add("active");
-    if (id === "translator") { renderChat(); renderConvList(); }
+// ---------------------------------------------------------------
+// 1. 세션(로그인 상태) 관리 — 백엔드에 토큰 개념이 없으므로
+//    로그인 성공 시 받은 정보를 localStorage에 직접 보관합니다.
+// ---------------------------------------------------------------
+function saveSession(session) {
+  localStorage.setItem(CONFIG.SESSION_KEY, JSON.stringify(session));
+}
+function loadSession() {
+  try {
+    const raw = localStorage.getItem(CONFIG.SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
   }
+}
+function clearSession() {
+  localStorage.removeItem(CONFIG.SESSION_KEY);
+}
 
-  // ── 버튼 클릭 시 통통 튀는 애니메이션 (순수 UI 연출) ──────────
-  root.addEventListener("click", e => {
-    const btn = e.target.closest(".mallang-btn");
-    if (!btn || btn.disabled) return;
-    btn.classList.remove("mallang-bounce");
-    void btn.offsetWidth;
-    btn.classList.add("mallang-bounce");
-    btn.addEventListener("animationend", () => btn.classList.remove("mallang-bounce"), { once: true });
+// ---------------------------------------------------------------
+// 2. 백엔드 호출 공용 함수
+// ---------------------------------------------------------------
+async function callApi(path, body) {
+  const res = await fetch(`${CONFIG.API_BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
   });
 
-  // ── 화면 전환(로그인 / 회원가입 / 번역기) ─────────────────────
-  $("login-btn").onclick = () => {
-    // TODO(backend): 이메일/비밀번호 검증 + 로그인 API 호출
-    // TODO(frontend): 로딩 상태, 에러 메시지(잘못된 비밀번호 등) UI 처리
-    // 성공 시 아래 호출로 번역기 화면으로 이동
-    goTo("translator");
-  };
-  $("go-signup-btn").onclick = () => goTo("signup");
-  $("back-btn").onclick      = () => goTo("login");
-  $("signup-btn").onclick = () => {
-    // TODO(backend): 입력값(이름/이메일/비밀번호/지역/직종) 검증 + 회원가입 API 호출
-    // TODO(frontend): 이메일 중복, 비밀번호 규칙 등 에러 UI 처리
-    if (agreed) goTo("translator");
-  };
+  // solo.py는 실패 시 HTTPException(status_code=500, detail="...")을 던짐
+  if (!res.ok) {
+    let detail = `서버 응답 오류 (${res.status})`;
+    try {
+      const errJson = await res.json();
+      if (errJson.detail) detail = errJson.detail;
+    } catch (e) { /* json 파싱 실패 시 기본 메시지 사용 */ }
+    throw new Error(detail);
+  }
+  return res.json();
+}
 
-  // ── 회원가입 폼의 지역/직종 커스텀 셀렉트 (순수 UI) ────────────
-  function buildCsel(wrapperId, menuId, options) {
-    const wrap = $(wrapperId);
-    const menu = $(menuId);
-    const btn  = wrap.querySelector(".csel-btn");
-    const val  = wrap.querySelector(".csel-val");
+// ---------------------------------------------------------------
+// 3. 로그인 페이지 (main.html)
+// ---------------------------------------------------------------
+function initLoginPage() {
+  const emailInput = document.getElementById("login-email");
+  const passwordInput = document.getElementById("login-password");
+  const loginBtn = document.getElementById("login-btn");
+  const goSignupBtn = document.getElementById("go-signup-btn");
+  const statusEl = document.getElementById("login-status");
 
-    options.forEach(opt => {
-      const b = document.createElement("button");
-      b.type = "button"; b.className = "csel-option"; b.textContent = opt;
-      b.onclick = () => {
-        val.textContent = opt; btn.classList.add("has-value"); closeCsels();
-        menu.querySelectorAll(".csel-option").forEach(o => o.classList.toggle("selected", o.textContent === opt));
-        if (wrapperId === "csel-region") region = opt;
-        if (wrapperId === "csel-job")    job    = opt;
-      };
-      menu.appendChild(b);
-    });
-
-    btn.onclick = () => {
-      const was = menu.classList.contains("open"); closeCsels();
-      if (!was) { menu.classList.add("open"); btn.classList.add("open"); }
-    };
+  function setStatus(msg) {
+    if (statusEl) statusEl.textContent = msg || "";
   }
 
-  function closeCsels() {
-    $$(".csel-menu").forEach(m => m.classList.remove("open"));
-    $$(".csel-btn").forEach(b => b.classList.remove("open"));
-  }
+  goSignupBtn?.addEventListener("click", () => {
+    window.location.href = "assignment.html";
+  });
 
-  root.addEventListener("click", e => { if (!e.target.closest(".csel")) closeCsels(); });
+  loginBtn?.addEventListener("click", async () => {
+    const userID = emailInput.value.trim();
+    const password = passwordInput.value;
 
-  // ── 약관 동의 체크박스 (순수 UI) ───────────────────────────────
-  $("check-wrap").onclick = () => {
-    agreed = !agreed;
-    $("check-box").classList.toggle("on", agreed);
-    $("check-box").innerHTML = agreed
-      ? `<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`
-      : "";
-    $("signup-btn").disabled = !agreed;
-  };
-
-  const toggleTerms = (e) => { e.stopPropagation(); $("terms-box").classList.toggle("open"); };
-  $("terms-toggle-a").onclick = toggleTerms;
-  $("pp-toggle-a").onclick    = toggleTerms;
-
-  // ── 번역기 상단/모바일 필터용 지역·직종 셀렉트 (순수 UI) ───────
-  function buildNsel(id, opts) {
-    const sel = $(id);
-    opts.forEach(o => { const el = document.createElement("option"); el.value = el.textContent = o; sel.appendChild(el); });
-    sel.onchange = () => {
-      const isRegion = id.includes("region");
-      if (isRegion) { region = sel.value; $(id.startsWith("h-") ? "m-region" : "h-region").value = sel.value; }
-      else          { job    = sel.value; $(id.startsWith("h-") ? "m-job"    : "h-job").value    = sel.value; }
-      sel.classList.toggle("hv", !!sel.value);
-      // TODO(backend): 변경된 지역/직종 값을 사용자 프로필에 저장하고 싶다면 여기서 API 호출
-    };
-  }
-
-  // ── 프로필 드롭다운 (순수 UI) ─────────────────────────────────
-  function setProfOpen(open) {
-    $("prof-dropdown").classList.toggle("open", open);
-    $("prof-btn").classList.toggle("open",   open);
-    $("prof-btn").classList.toggle("closed", !open);
-  }
-
-  $("prof-btn").onclick = () => setProfOpen(!$("prof-dropdown").classList.contains("open"));
-  root.addEventListener("click", e => { if (!e.target.closest(".prof-wrap")) setProfOpen(false); });
-  $("logout-btn").onclick = () => {
-    // TODO(backend): 로그아웃 처리 (세션/토큰 만료 등)
-    setProfOpen(false);
-    goTo("login");
-  };
-
-  // ── 채팅 메시지 렌더링 (화면 표시 담당, 데이터는 아래 TODO에서 채움) ──
-  function makeBubble(msg, loading = false) {
-    const row  = document.createElement("div"); row.className = "msg-row " + msg.role;
-    const av   = document.createElement("div"); av.className  = "msg-av "  + msg.role; av.textContent = msg.role === "bot" ? "🤖" : "👤";
-    const body = document.createElement("div"); body.className = "msg-body";
-
-    if (msg.role === "bot") {
-      const s = document.createElement("div"); s.className = "msg-sender"; s.textContent = "말랑"; body.appendChild(s);
+    if (!userID || !password) {
+      setStatus("이메일과 비밀번호를 모두 입력해주세요.");
+      return;
     }
 
-    const bubble = document.createElement("div"); bubble.className = "msg-bubble " + msg.role;
-    if (loading) bubble.innerHTML = `<div class="dot-row"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
-    else         bubble.textContent = msg.text;
+    loginBtn.disabled = true;
+    setStatus("로그인 중...");
 
-    body.appendChild(bubble); row.appendChild(av); row.appendChild(body);
-    return { row, bubble };
-  }
+    try {
+      const data = await callApi("/api/login", { userID, password });
 
-  function renderChat() {
-    $("chat-inner").innerHTML = "";
-    curMsgs.forEach(m => $("chat-inner").appendChild(makeBubble(m).row));
-    scrollBottom(); updateChips();
-  }
+      if (data.checkID) {
+        saveSession({ userID, biType: data.biType, locate: data.locate });
+        window.location.href = "chat.html";
+      } else {
+        setStatus("이메일 또는 비밀번호가 일치하지 않습니다.");
+      }
+    } catch (err) {
+      console.error(err);
+      setStatus("로그인 중 오류가 발생했습니다: " + err.message);
+    } finally {
+      loginBtn.disabled = false;
+    }
+  });
+}
 
-  function scrollBottom() { const a = $("chat-area"); a.scrollTop = a.scrollHeight; }
+// ---------------------------------------------------------------
+// 4. 회원가입 페이지 (assignment.html)
+// ---------------------------------------------------------------
+function setupCustomSelect(wrapId, options) {
+  const wrap = document.getElementById(wrapId);
+  if (!wrap) return { getValue: () => "" };
 
-  function updateChips() {
-    $("chip-row").style.display = curMsgs.some(m => m.role === "user") ? "none" : "flex";
-  }
+  const btn = wrap.querySelector(".csel-btn");
+  const valSpan = wrap.querySelector(".csel-val");
+  const menu = document.getElementById(`${wrapId}-menu`);
+  const placeholder = valSpan.textContent;
+  let selected = "";
 
-  function sendMsg() {
-    const ta   = $("chat-ta");
-    const text = ta.value.trim(); if (!text) return;
-    ta.value = ""; ta.style.height = "auto";
-    $("send-btn").disabled = true;
-
-    const userM = { role: "user", text };
-    const botM  = { role: "bot",  text: "" };
-    curMsgs.push(userM, botM);
-
-    $("chat-inner").appendChild(makeBubble(userM).row);
-    const { row: botRow, bubble: botBubble } = makeBubble(botM, true);
-    $("chat-inner").appendChild(botRow);
-    scrollBottom(); updateChips();
-
-    // TODO(backend): 여기서 실제 번역 API를 호출하세요.
-    //   요청: { text, region, job }
-    //   응답: { translatedText }
-    // TODO(frontend): API 호출 실패 시 에러 상태(재시도 버튼 등) 처리
-    // TODO(backend): 이 대화를 서버에 저장하고, 새 대화라면 목록(convList)에 추가
-    //
-    // 아래는 자리만 차지하는 더미 처리입니다 — 실제 API 응답으로 교체해 주세요.
-    // ------------------------------------------------------------------
-    // fetchTranslation(text, { region, job }).then(result => {
-    //   botBubble.innerHTML = "";
-    //   botBubble.textContent = result.translatedText;
-    //   botM.text = result.translatedText;
-    //   renderConvList();
-    //   scrollBottom();
-    // });
-    // ------------------------------------------------------------------
-  }
-
-  $("chat-ta").oninput = () => {
-    const ta = $("chat-ta");
-    ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight, 120) + "px";
-    $("send-btn").disabled = !ta.value.trim();
-  };
-  $("chat-ta").onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMsg(); } };
-  $("send-btn").onclick = sendMsg;
-
-  // 추천 질문 칩 클릭 시 입력창에 채워주기 (순수 UI)
-  $$(".chip").forEach(chip => {
-    chip.onclick = () => {
-      const ta = $("chat-ta");
-      ta.value = chip.textContent || ""; ta.dispatchEvent(new Event("input")); ta.focus();
-    };
+  menu.innerHTML = "";
+  options.forEach((opt) => {
+    const item = document.createElement("div");
+    item.className = "csel-item";
+    item.textContent = opt;
+    item.style.cursor = "pointer";
+    item.addEventListener("click", () => {
+      selected = opt;
+      valSpan.textContent = opt;
+      menu.style.display = "none";
+      menu.classList.remove("open");
+    });
+    menu.appendChild(item);
   });
 
-  $("new-chat-btn").onclick = () => {
-    curConvId = null;
-    curMsgs = [{ role: "bot", text: WELCOME }];
-    renderChat();
-    // TODO(backend): 새 대화 시작을 서버에 알릴 필요가 있다면 여기서 처리
-  };
+  menu.style.display = "none"; // 기본 닫힘 상태
 
-  // ── 좌측/프로필 안의 최근 대화 목록 (순수 UI 렌더링) ───────────
-  function renderConvList() {
-    const list = $("conv-list"); list.innerHTML = "";
-    if (!convList.length) { list.innerHTML = `<p class="pd-empty">아직 대화 기록이 없습니다.</p>`; return; }
-    convList.forEach(c => {
-      const btn = document.createElement("button"); btn.className = "pd-conv-btn";
-      btn.innerHTML = `<span class="pd-conv-icon">💬</span><span class="pd-conv-title">${c.title}</span>`;
-      btn.onclick = () => {
-        // TODO(backend): 선택한 대화(c.id)의 전체 메시지 내역을 서버에서 불러오기
-        curConvId = c.id;
-        curMsgs = c.msgs && c.msgs.length ? c.msgs : [{ role: "bot", text: WELCOME }];
-        renderChat(); setProfOpen(false);
-      };
-      list.appendChild(btn);
-    });
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const isOpen = menu.style.display === "block";
+    menu.style.display = isOpen ? "none" : "block";
+    menu.classList.toggle("open", !isOpen);
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!wrap.contains(e.target)) {
+      menu.style.display = "none";
+      menu.classList.remove("open");
+    }
+  });
+
+  return {
+    getValue: () => selected,
+    getPlaceholder: () => placeholder
+  };
+}
+
+function initSignupPage() {
+  const nameInput = document.getElementById("signup-name");
+  const emailInput = document.getElementById("signup-email");
+  const passwordInput = document.getElementById("signup-password");
+  const passwordConfirmInput = document.getElementById("signup-password-confirm");
+  const backBtn = document.getElementById("back-btn");
+  const signupBtn = document.getElementById("signup-btn");
+  const statusEl = document.getElementById("signup-status");
+
+  const checkWrap = document.getElementById("check-wrap");
+  const checkBox = document.getElementById("check-box");
+  const termsToggleA = document.getElementById("terms-toggle-a");
+  const ppToggleA = document.getElementById("pp-toggle-a");
+  const termsBox = document.getElementById("terms-box");
+
+  const regionSelect = setupCustomSelect("csel-region", CONFIG.REGIONS);
+  const jobSelect = setupCustomSelect("csel-job", CONFIG.JOBS);
+
+  function setStatus(msg) {
+    if (statusEl) statusEl.textContent = msg || "";
   }
 
-  // ── 초기 실행 ─────────────────────────────────────────────
-  buildCsel("csel-region", "csel-region-menu", REGIONS);
-  buildCsel("csel-job",    "csel-job-menu",    JOBS);
-  buildNsel("h-region", REGIONS); buildNsel("m-region", REGIONS);
-  buildNsel("h-job",    JOBS);    buildNsel("m-job",    JOBS);
-  renderChat(); renderConvList();
+  backBtn?.addEventListener("click", () => {
+    window.location.href = "main.html";
+  });
 
-  const upd = () => {
-    $("t-brand").style.display  = window.innerWidth >= 640 ? "block" : "none";
-    $("nc-label").style.display = window.innerWidth >= 640 ? "inline" : "none";
-  };
-  window.addEventListener("resize", upd); upd();
+  // 약관 내용 박스는 기본적으로 접어두고, 링크 클릭 시 펼쳐 보여줍니다.
+  if (termsBox) termsBox.style.display = "none";
+  function toggleTermsBox(e) {
+    e.preventDefault();
+    termsBox.style.display = termsBox.style.display === "none" ? "block" : "none";
+  }
+  termsToggleA?.addEventListener("click", toggleTermsBox);
+  ppToggleA?.addEventListener("click", toggleTermsBox);
+
+  // 체크박스: 클릭 시 동의 상태 토글 → 가입 버튼 활성화 여부 결정
+  let agreed = false;
+  checkWrap?.addEventListener("click", () => {
+    agreed = !agreed;
+    checkBox.classList.toggle("checked", agreed);
+    signupBtn.disabled = !agreed;
+  });
+
+  signupBtn?.addEventListener("click", async () => {
+    const name = nameInput.value.trim(); // 참고용으로만 사용, 백엔드로는 전송하지 않음
+    const userID = emailInput.value.trim();
+    const password = passwordInput.value;
+    const passwordConfirm = passwordConfirmInput.value;
+    const locate = regionSelect.getValue(); // 선택 안 하면 ""
+    const biType = jobSelect.getValue();
+
+    if (!userID || !password) {
+      setStatus("이메일과 비밀번호를 입력해주세요.");
+      return;
+    }
+    if (password !== passwordConfirm) {
+      setStatus("비밀번호가 일치하지 않습니다.");
+      return;
+    }
+
+    signupBtn.disabled = true;
+    setStatus("가입 처리 중...");
+
+    try {
+      const data = await callApi("/api/register", { userID, password, biType, locate });
+
+      if (data.checkNewUser) {
+        setStatus("가입이 완료되었습니다. 로그인 페이지로 이동합니다.");
+        setTimeout(() => (window.location.href = "main.html"), 800);
+      } else {
+        setStatus("이미 가입된 이메일입니다.");
+        signupBtn.disabled = false;
+      }
+    } catch (err) {
+      console.error(err);
+      setStatus("가입 중 오류가 발생했습니다: " + err.message);
+      signupBtn.disabled = false;
+    }
+  });
+}
+
+// ---------------------------------------------------------------
+// 5. 번역기(채팅) 페이지 (chat.html)
+// ---------------------------------------------------------------
+function populateSelect(selectEl, options, currentValue) {
+  if (!selectEl) return;
+  options.forEach((opt) => {
+    const optionEl = document.createElement("option");
+    optionEl.value = opt;
+    optionEl.textContent = opt;
+    selectEl.appendChild(optionEl);
+  });
+  if (currentValue) selectEl.value = currentValue;
+}
+
+function appendMessage(chatInner, chatArea, role, text) {
+  const bubble = document.createElement("div");
+  bubble.className = role === "user" ? "msg msg-user" : "msg msg-ai";
+  bubble.textContent = text;
+  chatInner.appendChild(bubble);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function initChatPage() {
+  const session = loadSession();
+  if (!session || !session.userID) {
+    // 로그인 안 된 상태로 접근 시 로그인 페이지로
+    window.location.href = "main.html";
+    return;
+  }
+
+  const chatArea = document.getElementById("chat-area");
+  const chatInner = document.getElementById("chat-inner");
+  const chatTa = document.getElementById("chat-ta");
+  const sendBtn = document.getElementById("send-btn");
+  const chipRow = document.getElementById("chip-row");
+  const newChatBtn = document.getElementById("new-chat-btn");
+  const logoutBtn = document.getElementById("logout-btn");
+  const profBtn = document.getElementById("prof-btn");
+  const profDropdown = document.getElementById("prof-dropdown");
+  const profName = document.querySelector(".prof-name");
+  const pdName = document.querySelector(".pd-name");
+  const pdEmail = document.querySelector(".pd-email");
+  const convList = document.getElementById("conv-list");
+
+  const hRegion = document.getElementById("h-region");
+  const hJob = document.getElementById("h-job");
+  const mRegion = document.getElementById("m-region");
+  const mJob = document.getElementById("m-job");
+
+  // 지역/직종 select 채우기 (데스크톱/모바일 둘 다), 로그인 시 저장된 값 기본 선택
+  populateSelect(hRegion, CONFIG.REGIONS, session.locate);
+  populateSelect(hJob, CONFIG.JOBS, session.biType);
+  populateSelect(mRegion, CONFIG.REGIONS, session.locate);
+  populateSelect(mJob, CONFIG.JOBS, session.biType);
+
+  // 데스크톱 select와 모바일 select 값 동기화
+  function syncSelects(a, b) {
+    a?.addEventListener("change", () => { if (b) b.value = a.value; });
+    b?.addEventListener("change", () => { if (a) a.value = b.value; });
+  }
+  syncSelects(hRegion, mRegion);
+  syncSelects(hJob, mJob);
+
+  // 프로필 정보 표시 (백엔드가 이름을 따로 저장하지 않으므로 이메일 앞부분을 표시명으로 사용)
+  const displayName = session.userID.split("@")[0];
+  if (profName) profName.textContent = displayName;
+  if (pdName) pdName.textContent = displayName;
+  if (pdEmail) pdEmail.textContent = session.userID;
+
+  // 최근 대화 목록: 이번 연동 범위에서는 제외 (백엔드에 대화 저장 기능이 없음)
+  if (convList) convList.innerHTML = "";
+
+  // 프로필 드롭다운 열고 닫기
+  profBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    profBtn.classList.toggle("closed");
+  });
+  document.addEventListener("click", (e) => {
+    if (profBtn && !profBtn.contains(e.target) && !profDropdown.contains(e.target)) {
+      profBtn.classList.add("closed");
+    }
+  });
+
+  // 로그아웃
+  logoutBtn?.addEventListener("click", () => {
+    clearSession();
+    window.location.href = "main.html";
+  });
+
+  // 새 채팅: 화면의 대화만 초기화 (서버에 저장된 대화가 없으므로 별도 API 호출 불필요)
+  newChatBtn?.addEventListener("click", () => {
+    chatInner.innerHTML = "";
+  });
+
+  // 추천 문구 칩 클릭 시 입력창에 채워넣기
+  chipRow?.querySelectorAll(".chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      chatTa.value = chip.textContent;
+      chatTa.dispatchEvent(new Event("input"));
+      chatTa.focus();
+    });
+  });
+
+  // 입력창 상태에 따라 전송 버튼 활성화
+  chatTa?.addEventListener("input", () => {
+    sendBtn.disabled = chatTa.value.trim().length === 0;
+    // 줄바꿈에 따라 textarea 높이 자동 조절
+    chatTa.style.height = "auto";
+    chatTa.style.height = chatTa.scrollHeight + "px";
+  });
+
+  // Enter 전송 / Shift+Enter 줄바꿈
+  chatTa?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (!sendBtn.disabled) sendMessage();
+    }
+  });
+
+  sendBtn?.addEventListener("click", sendMessage);
+
+  async function sendMessage() {
+    const message = chatTa.value.trim();
+    if (!message) return;
+
+    appendMessage(chatInner, chatArea, "user", message);
+    chatTa.value = "";
+    chatTa.style.height = "auto";
+    sendBtn.disabled = true;
+
+    try {
+      const data = await callApi("/api/soften", {
+        screen: "채팅창",
+        message,
+        userID: session.userID
+      });
+      appendMessage(chatInner, chatArea, "ai", data.returnMessage);
+    } catch (err) {
+      console.error(err);
+      appendMessage(chatInner, chatArea, "ai", "죄송해요, 답변을 가져오는 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.");
+    }
+  }
+}
+
+// ---------------------------------------------------------------
+// 6. 현재 페이지 감지 후 해당 초기화 함수 실행
+// ---------------------------------------------------------------
+document.addEventListener("DOMContentLoaded", () => {
+  if (document.getElementById("page-login")) {
+    initLoginPage();
+  } else if (document.getElementById("page-signup")) {
+    initSignupPage();
+  } else if (document.getElementById("page-translator")) {
+    initChatPage();
+  }
 });
