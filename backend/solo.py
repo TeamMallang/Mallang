@@ -5,7 +5,7 @@ from typing import Optional
 import firebase_admin
 from firebase_admin import credentials, firestore
 # 다른 개발자분이 짜둔 soften.py 파일에서 변환 함수를 가져옵니다.
-from soften import process_soften_language
+from .soften import process_soften_language
 
 app = FastAPI()
 
