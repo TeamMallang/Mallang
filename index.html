@@ -1,192 +1,46 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Mallang 채팅</title>
-<style>
-  /* ===== UI/UX 담당자가 자유롭게 수정하는 영역 ===== */
-  * { box-sizing: border-box; }
-
-  body {
-    font-family: -apple-system, "Pretendard", sans-serif;
-    background: #f7f7fb;
-    margin: 0;
-    padding: 40px 16px;
-  }
-
-  .chat-container {
-    max-width: 480px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .input-row {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-
-  #message-input {
-    flex: 1;
-    padding: 12px 18px;
-    border: 1px solid #ddd;
-    border-radius: 999px;
-    outline: none;
-    font-size: 15px;
-  }
-
-  #message-input:focus {
-    border-color: #6366f1;
-  }
-
-  #send-button {
-    padding: 12px 22px;
-    border: none;
-    border-radius: 999px;
-    background: #6366f1;
-    color: white;
-    font-size: 15px;
-    cursor: pointer;
-    transition: background 0.15s ease;
-  }
-
-  #send-button:hover:not(:disabled) {
-    background: #4f46e5;
-  }
-
-  #send-button:disabled {
-    background: #c7c7d1;
-    cursor: not-allowed;
-  }
-
-  #status-text {
-    font-size: 13px;
-    color: #888;
-    min-height: 18px;
-  }
-
-  #status-text.error {
-    color: #ef4444;
-  }
-
-  #reply-box {
-    display: none;
-    background: #eef2ff;
-    border-radius: 14px;
-    padding: 16px 18px;
-  }
-
-  #reply-box .reply-label {
-    font-size: 12px;
-    color: #888;
-    margin: 0 0 6px 0;
-  }
-
-  #reply-box .reply-text {
-    margin: 0;
-    color: #222;
-    line-height: 1.5;
-    white-space: pre-wrap;
-  }
-  /* ===== 수정 영역 끝 ===== */
-</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>말랑 — 사회 언어 번역기 (로그인)</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-  <div class="chat-container">
-    <div class="input-row">
-      <input
-        type="text"
-        id="message-input"
-        placeholder="보내려는 메시지를 입력하세요"
-      />
-      <button id="send-button">전송</button>
+<div id="mallang-root">
+<div id="page-login" class="page active auth-layout">
+  <div class="auth-left">
+    <div class="auth-grid"></div>
+    <div class="auth-blob" style="bottom:-96px;right:-96px;width:320px;height:320px;background:radial-gradient(circle,rgba(64,112,244,.18) 0%,transparent 70%)"></div>
+    <div class="auth-blob" style="top:64px;right:-64px;width:224px;height:224px;background:radial-gradient(circle,rgba(64,112,244,.10) 0%,transparent 70%)"></div>
+    <div class="brand-row"><svg width="32" height="32" viewBox="0 0 40 40" fill="none">
+  <rect width="40" height="40" rx="15" fill="#1A2750"/>
+  <circle cx="30" cy="30" r="9" fill="#4070F4" opacity=".22"/>
+  <circle cx="30" cy="30" r="5.5" fill="#4070F4" opacity=".35"/>
+  <text x="5" y="28" font-family="'Plus Jakarta Sans',sans-serif" font-weight="800" font-size="22" fill="white">M</text>
+</svg> <span class="brand-name-sm">말랑</span></div>
+    <div style="position:relative;z-index:1">
+      <p class="left-label">Welcome</p>
+      <h1 class="left-heading">그 말,<br>말랑하게<br>다시 해볼까요?</h1>
+      <p class="left-sub">사회 경험이 적은 직장인을 위한 코칭 AI.<br>내 말을 부드럽고 전문적인 언어로 바꿔드립니다.</p>
     </div>
-
-    <p id="status-text"></p>
-
-    <div id="reply-box">
-      <p class="reply-label">Mallang의 피드백</p>
-      <p class="reply-text" id="reply-text"></p>
+    <p class="left-footer" style="position:relative;z-index:1">© 2025 Team Mallang</p>
+  </div>
+  <div class="auth-right">
+    <div class="auth-form-wrap">
+      <h2 class="form-title">다시 만나서 반가워요</h2>
+      <p class="form-sub">로그인하고 말랑하게 시작해봐요.</p>
+      <div class="field"><label class="field-label">이메일</label><input type="email" id="login-email" class="field-input" placeholder="name@company.com"></div>
+      <div class="field"><label class="field-label">비밀번호</label><input type="password" id="login-password" class="field-input" placeholder="••••••••"></div>
+      <button class="forgot-btn">비밀번호를 잊으셨나요?</button>
+      <button class="btn-primary mallang-btn" id="login-btn">로그인 →</button>
+      <p id="login-status" class="form-status" style="min-height:18px;font-size:13px;color:#e05555;margin-top:8px"></p>
+      <div class="divider"><div class="divider-line"></div><span class="divider-text">또는</span><div class="divider-line"></div></div>
+      <p class="signup-row">아직 계정이 없으신가요? <button class="signup-row-btn mallang-btn" id="go-signup-btn">회원가입</button></p>
     </div>
   </div>
-
-  <script>
-    // ===== 로직 영역: 프론트엔드 담당자가 관리 =====
-
-    // 배포 시엔 실제 백엔드 주소로 교체 (예: https://mallang-backend.onrender.com)
-    const API_URL = "https://mallangtest.onrender.com";
-
-    const messageInput = document.getElementById("message-input");
-    const sendButton = document.getElementById("send-button");
-    const statusText = document.getElementById("status-text");
-    const replyBox = document.getElementById("reply-box");
-    const replyText = document.getElementById("reply-text");
-
-    async function sendMessage() {
-      const message = messageInput.value.trim();
-      if (!message) return;
-
-      setLoading(true);
-      replyBox.style.display = "none";
-
-      try {
-        const res = await fetch(`${API_URL}/api/message`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            text: message
-          })
-        });
-
-        if (!res.ok) {
-          throw new Error(`서버 응답 오류 (${res.status})`);
-        }
-
-        const data = await res.json();
-        showReply(data.reply);
-      } catch (err) {
-        console.error(err);
-        showError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    function setLoading(isLoading) {
-      sendButton.disabled = isLoading;
-      messageInput.disabled = isLoading;
-      sendButton.textContent = isLoading ? "전송 중..." : "전송";
-      statusText.textContent = isLoading ? "답변을 기다리는 중이에요..." : "";
-      statusText.classList.remove("error");
-    }
-
-    function showReply(text) {
-      replyText.textContent = text;
-      replyBox.style.display = "block";
-    }
-
-    function showError(message) {
-      statusText.textContent = message;
-      statusText.classList.add("error");
-    }
-
-    // 버튼 클릭 시 전송
-    sendButton.addEventListener("click", sendMessage);
-
-    // Enter 키로도 전송 (Shift+Enter는 줄바꿈으로 남겨둠)
-    messageInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
-    });
-  </script>
-
+</div>
+</div>
+<script src="app.js"></script>
 </body>
 </html>
