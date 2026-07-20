@@ -10,6 +10,15 @@ from soften import process_soften_language
 app = FastAPI()
 
 # ==========================================
+# [서버 연결 테스트용 기본 엔드포인트]
+# ==========================================
+# Render 주소(https://...onrender.com)로 직접 접속했을 때 404 에러가 나는 것을 방지합니다.
+@app.get("/")
+async def root():
+    return {"status": "ok", "message": "Mallang Backend server is running!"}
+
+
+# ==========================================
 # [파이어베이스 연결 설정]
 # ==========================================
 try:
@@ -24,7 +33,7 @@ except Exception as e:
 # -----------------------------------------------------------------
 # 바로 아랫줄 ['http://~'] 여기에 프론트엔드 주소를 넣으세요.
 # -----------------------------------------------------------------
-origins = ["http://localhost:3000"]
+origins = ["https://mallang-test-d28t.vercel.app"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -67,7 +76,6 @@ class IdCheckRequest(BaseModel):
 # ==========================================
 
 # [기능 1] 채팅창 및 언어 변환 피드백 (프론트 <-> 백엔드 <-> AI 모듈 연결)
-# 호출 주소: http://127.0.0
 @app.post("/api/soften")
 async def soften_language(data: ChatRequest):
     try:
@@ -82,7 +90,6 @@ async def soften_language(data: ChatRequest):
 
 
 # [기능 2] 로그인 처리 (파이어베이스에서 데이터 불러오기 및 검증 확장)
-# 호출 주소: http://127.0.0
 @app.post("/api/login")
 async def login_user(data: LoginRequest):
     try:
@@ -113,7 +120,6 @@ async def login_user(data: LoginRequest):
 
 
 # [기능 3] 회원가입 처리 (유저 정보를 파이어베이스 클라우드에 영구 저장)
-# 호출 주소: http://127.0.0
 @app.post("/api/register")
 async def register_user(data: RegisterRequest):
     try:
@@ -138,7 +144,6 @@ async def register_user(data: RegisterRequest):
 
 
 # [기능 4] ID 중복확인 버튼 클릭 시 (파이어베이스 실시간 단건 조회)
-# 호출 주소: http://127.0.0
 @app.post("/api/check-id")
 async def check_id_duplication(data: IdCheckRequest):
     try:
@@ -155,5 +160,5 @@ async def check_id_duplication(data: IdCheckRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    # 외부 서버 접속을 전면 허용하려면 host를 "0.0.0.0"으로 변경해 배포하세요.
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    # 외부 로컬 접속 및 프론트 통신을 원활하게 하기 위해 host를 "0.0.0.0"으로 변경했습니다.
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
