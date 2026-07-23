@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>말랑 — 회원가입</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="auth-wrap">
+    <div class="auth-left">
+      <div class="auth-grid"></div>
+      <div class="auth-blob" style="bottom:-80px;left:-80px;width:300px;height:300px"></div>
+      <button class="back-btn" id="btn-back">← 로그인으로 돌아가기</button>
+      <div style="position:relative;z-index:1">
+        <p class="lbl">Join us</p>
+        <h1 class="lhead">이제부터<br>직장이<br>말랑해져요.</h1>
+        <p class="lsub">계정을 만들고 지역·직종에 맞는<br>맞춤형 코칭 AI를 경험하세요.</p>
+      </div>
+      <p class="lfoot">© 2025 Team Mallang</p>
+    </div>
+    <div class="auth-right">
+      <div class="form-wrap">
+        <h2 class="form-title">계정 만들기</h2>
+        <p class="form-sub">아래 정보를 입력해 회원가입을 완료하세요.</p>
+        <div class="field"><label class="flabel">이름</label><input type="text" class="finput" placeholder="홍길동"></div>
+        <div class="field"><label class="flabel">이메일</label><input type="email" class="finput" placeholder="name@company.com"></div>
+        <div class="field"><label class="flabel">비밀번호</label><input type="password" class="finput" placeholder="8자 이상 입력해주세요"></div>
+        <div class="field"><label class="flabel">비밀번호 확인</label><input type="password" class="finput" placeholder="비밀번호를 다시 입력해주세요"></div>
+
+        <div class="sec-mark"><div class="sec-bar"></div><span class="sec-txt">근무 정보</span></div>
+
+        <div class="csel" id="csel-region">
+          <label class="csel-lbl">근무 지역</label>
+          <button type="button" class="csel-btn" id="csel-region-btn">
+            <span class="csel-val" id="csel-region-val">지역 선택 (선택사항)</span>
+            <span class="csel-arr">▾</span>
+          </button>
+          <div class="csel-menu" id="csel-region-menu"></div>
+        </div>
+
+        <div class="csel" id="csel-job">
+          <label class="csel-lbl">직종</label>
+          <button type="button" class="csel-btn" id="csel-job-btn">
+            <span class="csel-val" id="csel-job-val">직종 선택 (선택사항)</span>
+            <span class="csel-arr">▾</span>
+          </button>
+          <div class="csel-menu" id="csel-job-menu"></div>
+        </div>
+
+        <div class="chk-wrap" id="chk-wrap">
+          <div class="chk-box" id="chk-box"></div>
+          <p class="chk-lbl">
+            <a id="a-terms">이용약관</a> 및 <a id="a-pp">개인정보처리방침</a>에 동의합니다.
+          </p>
+        </div>
+        <div class="terms-box" id="terms-box">
+          <p class="terms-ttl">개인정보 및 대화 내용 처리 방침</p>
+          <p>말랑은 이용자의 <strong>직장 관련 대화 내용을 일체 수집하거나 저장하지 않습니다.</strong> 번역 요청 시 입력된 텍스트는 처리 완료 즉시 서버에서 완전히 폐기됩니다.</p>
+          <p style="margin-top:8px">회사명, 동료 이름, 업무 내용 등 민감한 정보가 포함된 내용도 <strong>세션 종료와 동시에 즉각 삭제</strong>되며, 어떠한 형태로도 기록되거나 제3자에게 제공되지 않습니다.</p>
+          <p style="margin-top:8px;opacity:.6">※ 수집 정보는 이름·이메일·근무 지역·직종에 한하며 서비스 품질 개선에만 활용됩니다.</p>
+        </div>
+
+        <button class="btn-primary" id="btn-signup" disabled>가입 완료 →</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    initTheme();
+    initBounce();
+    initCsels();
+    initTerms();
+
+    document.getElementById('btn-back').addEventListener('click', () => {
+      setTimeout(() => location.href = 'login.html', 300);
+    });
+    document.getElementById('btn-signup').addEventListener('click', () => {
+      setTimeout(() => location.href = 'translator.html', 300);
+    });
+  </script>
+</body>
+</html>
