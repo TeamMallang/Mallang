@@ -5,7 +5,7 @@ from typing import Optional
 import json
 import os
 
-from soften import process_soften_language
+from mallang_soften import process_soften_language
 from firebase_utils import db
 
 app = FastAPI()
