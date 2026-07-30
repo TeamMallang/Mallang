@@ -155,12 +155,19 @@ function initLoginPage() {
 // ---------------------------------------------------------------
 function setupCustomSelect(wrapId, options) {
   const wrap = document.getElementById(wrapId);
-  if (!wrap) return { getValue: () => "" };
+  if (!wrap) return { getValue: () => "", getPlaceholder: () => "" };
 
   const btn = wrap.querySelector(".csel-btn");
   const valSpan = wrap.querySelector(".csel-val");
   const menu = document.getElementById(`${wrapId}-menu`);
-  const placeholder = valSpan.textContent;
+
+  // 필수 요소가 없으면 안전하게 빈 선택기로 동작
+  if (!btn || !valSpan || !menu) {
+    console.warn(`setupCustomSelect: missing elements for ${wrapId}`);
+    return { getValue: () => "", getPlaceholder: () => (valSpan ? valSpan.textContent : "") };
+  }
+
+  const placeholder = valSpan.textContent || "";
   let selected = "";
 
   menu.innerHTML = "";
@@ -372,7 +379,10 @@ function initChatPage() {
     profBtn.classList.toggle("closed");
   });
   document.addEventListener("click", (e) => {
-    if (profBtn && !profBtn.contains(e.target) && !profDropdown.contains(e.target)) {
+    // profDropdown가 없을 수 있으므로 안전하게 검사
+    const clickedInsideProfBtn = profBtn && profBtn.contains(e.target);
+    const clickedInsideProfDropdown = profDropdown && profDropdown.contains(e.target);
+    if (profBtn && !clickedInsideProfBtn && !clickedInsideProfDropdown) {
       profBtn.classList.add("closed");
     }
   });
