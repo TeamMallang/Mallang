@@ -9,7 +9,7 @@
 // ---------------------------------------------------------------
 const CONFIG = {
   // TODO: 배포 시 실제 백엔드 주소로 교체하세요 (예: https://mallang-backend.onrender.com)
-  API_BASE: "http://127.0.0.1:8000",
+  API_BASE: "https://mallangtest.onrender.com",
 
   // ⚠️ 임시 샘플 목록입니다. 실제 지역/직종 목록으로 교체해주세요.
   REGIONS: [
