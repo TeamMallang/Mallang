@@ -1,6 +1,6 @@
 import { CONFIG } from './config.js';
 
-export async function callApi(path, body, timeoutMs = 15000) {
+export async function callApi(path, body, timeoutMs = 70000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
