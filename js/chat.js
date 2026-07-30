@@ -179,9 +179,16 @@ export function initChatPage() {
     sendBtn.disabled = true;
 
     try {
+      // 현재 선택된 지역 및 직무 정보 가져오기
+      const currentLocate = hRegion.value || session.locate || "알 수 없음";
+      const currentBiType = hJob.value || session.biType || "알 수 없음";
+
+      // 프롬프트에 정보 추가
+      const enhancedMessage = `[사용자 정보: 지역-${currentLocate}, 직무-${currentBiType}]\n${message}`;
+
       const data = await callApi("/api/soften", {
         screen: "채팅창",
-        message,
+        message: enhancedMessage,
         userID: session.userID
       });
       appendMessage(chatInner, chatArea, "ai", data.returnMessage);
