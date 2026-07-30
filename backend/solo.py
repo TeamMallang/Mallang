@@ -4,8 +4,14 @@ from pydantic import BaseModel
 from typing import Optional
 import json
 import os
-from soften import process_soften_language
-from firebase_utils import db
+
+try:
+    from soften import process_soften_language
+    from firebase_utils import db
+except ImportError:
+    # 패키지 형태로 실행될 경우를 대비한 예외 처리
+    from backend.soften import process_soften_language
+    from backend.firebase_utils import db
 
 app = FastAPI()
 
