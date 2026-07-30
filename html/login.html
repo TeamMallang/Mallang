@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>말랑 — 로그인</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <div class="auth-wrap">
+    <div class="auth-left">
+      <div class="auth-grid"></div>
+      <div class="auth-blob" style="bottom:-80px;right:-80px;width:300px;height:300px"></div>
+      <div style="position:relative;z-index:1">
+        <img src="logo.png" class="logo-l" alt="말랑">
+      </div>
+      <div style="position:relative;z-index:1">
+        <p class="lbl">Welcome</p>
+        <h1 class="lhead">그 말,<br>말랑하게<br>다시 해볼까요?</h1>
+        <p class="lsub">사회 경험이 적은 직장인을 위한 코칭 AI.<br>내 말을 부드럽고 전문적인 언어로 바꿔드립니다.</p>
+      </div>
+      <p class="lfoot">© 2025 Team Mallang</p>
+    </div>
+    <div class="auth-right">
+      <div class="form-wrap">
+        <h2 class="form-title">다시 만나서 반가워요</h2>
+        <p class="form-sub">로그인하고 말랑하게 시작해봐요.</p>
+        <div class="field">
+          <label class="flabel">이메일</label>
+          <input type="email" class="finput" placeholder="name@company.com">
+        </div>
+        <div class="field">
+          <label class="flabel">비밀번호</label>
+          <input type="password" class="finput" placeholder="••••••••">
+        </div>
+        <button class="forgot-btn">비밀번호를 잊으셨나요?</button>
+        <button class="btn-primary" id="btn-login">로그인 →</button>
+        <div class="divider">
+          <div class="div-line"></div>
+          <span class="div-txt">또는</span>
+          <div class="div-line"></div>
+        </div>
+        <p class="signup-row">
+          아직 계정이 없으신가요?
+          <button class="signup-link" id="btn-go-signup">회원가입</button>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="../app.js"></script>
+  <script>
+    initTheme();
+    initBounce();
+
+    document.getElementById('btn-login').addEventListener('click', () => {
+      setTimeout(() => location.href = 'translator.html', 300);
+    });
+    document.getElementById('btn-go-signup').addEventListener('click', () => {
+      setTimeout(() => location.href = 'signup.html', 300);
+    });
+  </script>
+</body>
+</html>
