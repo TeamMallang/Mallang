@@ -1,6 +1,6 @@
 // =====================================================================
 // 말랑(Mallang) 프론트엔드 ↔ 백엔드(solo.py) 중계 스크립트
-// main.html / assignment.html / chat.html 세 페이지에서 공통으로 로드됩니다.
+// /login, /signup, /chat 세 페이지(각 html/login.html, html/signup.html, html/chat.html)에서 공통으로 로드됩니다.
 // 현재 페이지에 어떤 요소가 있는지 감지해서 그 페이지에 맞는 로직만 실행합니다.
 // =====================================================================
 
@@ -46,12 +46,27 @@ function clearSession() {
 // ---------------------------------------------------------------
 // 2. 백엔드 호출 공용 함수
 // ---------------------------------------------------------------
-async function callApi(path, body) {
-  const res = await fetch(`${CONFIG.API_BASE}${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
-  });
+async function callApi(path, body, timeoutMs = 15000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  let res;
+  try {
+    res = await fetch(`${CONFIG.API_BASE}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: controller.signal
+    });
+  } catch (e) {
+    if (e.name === "AbortError") {
+      throw new Error("서버 응답이 너무 오래 걸립니다. 잠시 후 다시 시도해주세요.");
+    }
+    // 네트워크 자체가 끊긴 경우 (CORS 차단, 서버 다운, 오프라인 등)
+    throw new Error("서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.");
+  } finally {
+    clearTimeout(timer);
+  }
 
   // solo.py는 실패 시 HTTPException(status_code=500, detail="...")을 던짐
   if (!res.ok) {
@@ -62,11 +77,24 @@ async function callApi(path, body) {
     } catch (e) { /* json 파싱 실패 시 기본 메시지 사용 */ }
     throw new Error(detail);
   }
-  return res.json();
+
+  try {
+    return await res.json();
+  } catch (e) {
+    throw new Error("서버 응답을 해석할 수 없습니다.");
+  }
 }
 
 // ---------------------------------------------------------------
-// 3. 로그인 페이지 (main.html)
+// 공용 유효성 검사 헬퍼
+// ---------------------------------------------------------------
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function isValidEmail(v) {
+  return EMAIL_RE.test(v);
+}
+
+// ---------------------------------------------------------------
+// 3. 로그인 페이지 (/login)
 // ---------------------------------------------------------------
 function initLoginPage() {
   const emailInput = document.getElementById("login-email");
@@ -80,15 +108,24 @@ function initLoginPage() {
   }
 
   goSignupBtn?.addEventListener("click", () => {
-    window.location.href = "assignment.html";
+    window.location.href = "/signup";
   });
 
   loginBtn?.addEventListener("click", async () => {
+    if (!emailInput || !passwordInput) {
+      setStatus("페이지 로딩에 문제가 있습니다. 새로고침 후 다시 시도해주세요.");
+      return;
+    }
+
     const userID = emailInput.value.trim();
     const password = passwordInput.value;
 
     if (!userID || !password) {
       setStatus("이메일과 비밀번호를 모두 입력해주세요.");
+      return;
+    }
+    if (!isValidEmail(userID)) {
+      setStatus("올바른 이메일 형식이 아닙니다.");
       return;
     }
 
@@ -100,7 +137,7 @@ function initLoginPage() {
 
       if (data.checkID) {
         saveSession({ userID, biType: data.biType, locate: data.locate });
-        window.location.href = "chat.html";
+        window.location.href = "/chat";
       } else {
         setStatus("이메일 또는 비밀번호가 일치하지 않습니다.");
       }
@@ -114,7 +151,7 @@ function initLoginPage() {
 }
 
 // ---------------------------------------------------------------
-// 4. 회원가입 페이지 (assignment.html)
+// 4. 회원가입 페이지 (/signup)
 // ---------------------------------------------------------------
 function setupCustomSelect(wrapId, options) {
   const wrap = document.getElementById(wrapId);
@@ -186,7 +223,7 @@ function initSignupPage() {
   }
 
   backBtn?.addEventListener("click", () => {
-    window.location.href = "main.html";
+    window.location.href = "/login";
   });
 
   // 약관 내용 박스는 기본적으로 접어두고, 링크 클릭 시 펼쳐 보여줍니다.
@@ -207,6 +244,11 @@ function initSignupPage() {
   });
 
   signupBtn?.addEventListener("click", async () => {
+    if (!nameInput || !emailInput || !passwordInput || !passwordConfirmInput) {
+      setStatus("페이지 로딩에 문제가 있습니다. 새로고침 후 다시 시도해주세요.");
+      return;
+    }
+
     const name = nameInput.value.trim(); // 참고용으로만 사용, 백엔드로는 전송하지 않음
     const userID = emailInput.value.trim();
     const password = passwordInput.value;
@@ -216,6 +258,14 @@ function initSignupPage() {
 
     if (!userID || !password) {
       setStatus("이메일과 비밀번호를 입력해주세요.");
+      return;
+    }
+    if (!isValidEmail(userID)) {
+      setStatus("올바른 이메일 형식이 아닙니다.");
+      return;
+    }
+    if (password.length < 8) {
+      setStatus("비밀번호는 8자 이상이어야 합니다.");
       return;
     }
     if (password !== passwordConfirm) {
@@ -231,7 +281,7 @@ function initSignupPage() {
 
       if (data.checkNewUser) {
         setStatus("가입이 완료되었습니다. 로그인 페이지로 이동합니다.");
-        setTimeout(() => (window.location.href = "main.html"), 800);
+        setTimeout(() => (window.location.href = "/login"), 800);
       } else {
         setStatus("이미 가입된 이메일입니다.");
         signupBtn.disabled = false;
@@ -245,7 +295,7 @@ function initSignupPage() {
 }
 
 // ---------------------------------------------------------------
-// 5. 번역기(채팅) 페이지 (chat.html)
+// 5. 번역기(채팅) 페이지 (/chat)
 // ---------------------------------------------------------------
 function populateSelect(selectEl, options, currentValue) {
   if (!selectEl) return;
@@ -270,7 +320,7 @@ function initChatPage() {
   const session = loadSession();
   if (!session || !session.userID) {
     // 로그인 안 된 상태로 접근 시 로그인 페이지로
-    window.location.href = "main.html";
+    window.location.href = "/login";
     return;
   }
 
@@ -330,7 +380,7 @@ function initChatPage() {
   // 로그아웃
   logoutBtn?.addEventListener("click", () => {
     clearSession();
-    window.location.href = "main.html";
+    window.location.href = "/login";
   });
 
   // 새 채팅: 화면의 대화만 초기화 (서버에 저장된 대화가 없으므로 별도 API 호출 불필요)

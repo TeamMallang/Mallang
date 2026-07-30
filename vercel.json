@@ -1,0 +1,14 @@
+{
+  "trailingSlash": false,
+  "redirects": [
+    { "source": "/", "destination": "/login", "permanent": false },
+    { "source": "/login.html", "destination": "/login", "permanent": true },
+    { "source": "/signup.html", "destination": "/signup", "permanent": true },
+    { "source": "/chat.html", "destination": "/chat", "permanent": true }
+  ],
+  "rewrites": [
+    { "source": "/login", "destination": "/html/login.html" },
+    { "source": "/signup", "destination": "/html/signup.html" },
+    { "source": "/chat", "destination": "/html/chat.html" }
+  ]
+}

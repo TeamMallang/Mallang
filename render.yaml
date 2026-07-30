@@ -2,5 +2,6 @@ services:
   - type: web
     name: mallang-backend
     runtime: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "uvicorn test:app --host 0.0.0.0 --port $PORT"
+    rootDir: backend
+    buildCommand: "pip install -r ../requirements.txt"
+    startCommand: "uvicorn solo:app --host 0.0.0.0 --port $PORT"

@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
+import json
+import os
 import firebase_admin
 from firebase_admin import credentials, firestore
 # 다른 개발자분이 짜둔 soften.py 파일에서 변환 함수를 가져옵니다.
@@ -21,14 +23,18 @@ async def root():
 # ==========================================
 # [파이어베이스 연결 설정]
 # ==========================================
+# 배포 환경(Render)에서는 FIREBASE_CREDENTIALS_JSON 환경변수(JSON 전체를 문자열로)를 우선 사용하고,
+# 로컬 개발 중이라 환경변수가 없으면 같은 폴더의 firebase_config.json 파일을 사용합니다.
 try:
-    # 파이어베이스 웹 콘솔에서 다운로드받은 비밀 키 파일 이름입니다. 
-    # 반드시 backend/main.py 파일과 정확히 같은 폴더에 들어있어야 합니다.
-    cred = credentials.Certificate("firebase_config.json")
+    firebase_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
+    if firebase_json:
+        cred = credentials.Certificate(json.loads(firebase_json))
+    else:
+        cred = credentials.Certificate("firebase_config.json")
     firebase_admin.initialize_app(cred)
     db = firestore.client()
 except Exception as e:
-    print(f"파이어베이스 초기화 실패 (firebase_config.json 키 파일을 확인하세요): {e}")
+    print(f"파이어베이스 초기화 실패 (FIREBASE_CREDENTIALS_JSON 환경변수 또는 firebase_config.json 파일을 확인하세요): {e}")
 
 # -----------------------------------------------------------------
 # 바로 아랫줄 ['http://~'] 여기에 프론트엔드 주소를 넣으세요.
