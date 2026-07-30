@@ -6,12 +6,12 @@
   <title>말랑 — 회원가입</title>
   <link rel="stylesheet" href="../styles.css">
 </head>
-<body>
+<body id="page-signup">
   <div class="auth-wrap">
     <div class="auth-left">
       <div class="auth-grid"></div>
       <div class="auth-blob" style="bottom:-80px;left:-80px;width:300px;height:300px"></div>
-      <button class="back-btn" id="btn-back">← 로그인으로 돌아가기</button>
+      <button class="back-btn" id="back-btn">← 로그인으로 돌아가기</button>
       <div style="position:relative;z-index:1">
         <p class="lbl">Join us</p>
         <h1 class="lhead">이제부터<br>직장이<br>말랑해져요.</h1>
@@ -23,17 +23,17 @@
       <div class="form-wrap">
         <h2 class="form-title">계정 만들기</h2>
         <p class="form-sub">아래 정보를 입력해 회원가입을 완료하세요.</p>
-        <div class="field"><label class="flabel">이름</label><input type="text" class="finput" placeholder="홍길동"></div>
-        <div class="field"><label class="flabel">이메일</label><input type="email" class="finput" placeholder="name@company.com"></div>
-        <div class="field"><label class="flabel">비밀번호</label><input type="password" class="finput" placeholder="8자 이상 입력해주세요"></div>
-        <div class="field"><label class="flabel">비밀번호 확인</label><input type="password" class="finput" placeholder="비밀번호를 다시 입력해주세요"></div>
+        <div class="field"><label class="flabel">이름</label><input type="text" id="signup-name" class="finput" placeholder="홍길동"></div>
+        <div class="field"><label class="flabel">이메일</label><input type="email" id="signup-email" class="finput" placeholder="name@company.com"></div>
+        <div class="field"><label class="flabel">비밀번호</label><input type="password" id="signup-password" class="finput" placeholder="8자 이상 입력해주세요"></div>
+        <div class="field"><label class="flabel">비밀번호 확인</label><input type="password" id="signup-password-confirm" class="finput" placeholder="비밀번호를 다시 입력해주세요"></div>
 
         <div class="sec-mark"><div class="sec-bar"></div><span class="sec-txt">근무 정보</span></div>
 
         <div class="csel" id="csel-region">
           <label class="csel-lbl">근무 지역</label>
-          <button type="button" class="csel-btn" id="csel-region-btn">
-            <span class="csel-val" id="csel-region-val">지역 선택 (선택사항)</span>
+          <button type="button" class="csel-btn">
+            <span class="csel-val">지역 선택 (선택사항)</span>
             <span class="csel-arr">▾</span>
           </button>
           <div class="csel-menu" id="csel-region-menu"></div>
@@ -41,17 +41,17 @@
 
         <div class="csel" id="csel-job">
           <label class="csel-lbl">직종</label>
-          <button type="button" class="csel-btn" id="csel-job-btn">
-            <span class="csel-val" id="csel-job-val">직종 선택 (선택사항)</span>
+          <button type="button" class="csel-btn">
+            <span class="csel-val">직종 선택 (선택사항)</span>
             <span class="csel-arr">▾</span>
           </button>
           <div class="csel-menu" id="csel-job-menu"></div>
         </div>
 
-        <div class="chk-wrap" id="chk-wrap">
-          <div class="chk-box" id="chk-box"></div>
+        <div class="chk-wrap" id="check-wrap">
+          <div class="chk-box" id="check-box"></div>
           <p class="chk-lbl">
-            <a id="a-terms">이용약관</a> 및 <a id="a-pp">개인정보처리방침</a>에 동의합니다.
+            <a id="terms-toggle-a" href="#">이용약관</a> 및 <a id="pp-toggle-a" href="#">개인정보처리방침</a>에 동의합니다.
           </p>
         </div>
         <div class="terms-box" id="terms-box">
@@ -61,24 +61,12 @@
           <p style="margin-top:8px;opacity:.6">※ 수집 정보는 이름·이메일·근무 지역·직종에 한하며 서비스 품질 개선에만 활용됩니다.</p>
         </div>
 
-        <button class="btn-primary" id="btn-signup" disabled>가입 완료 →</button>
+        <p id="signup-status" class="status-msg"></p>
+        <button class="btn-primary" id="signup-btn" disabled>가입 완료 →</button>
       </div>
     </div>
   </div>
 
   <script src="../app.js"></script>
-  <script>
-    initTheme();
-    initBounce();
-    initCsels();
-    initTerms();
-
-    document.getElementById('btn-back').addEventListener('click', () => {
-      setTimeout(() => location.href = 'login.html', 300);
-    });
-    document.getElementById('btn-signup').addEventListener('click', () => {
-      setTimeout(() => location.href = 'translator.html', 300);
-    });
-  </script>
 </body>
 </html>

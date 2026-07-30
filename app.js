@@ -7,14 +7,9 @@
 // ---------------------------------------------------------------
 // 0. 공통 설정
 // ---------------------------------------------------------------
-const API_BASE =
-    window.location.hostname === "localhost"
-        ? "http://localhost:8000"
-        : "https://mallangtest.onrender.com";
-
 const CONFIG = {
   // TODO: 배포 시 실제 백엔드 주소로 교체하세요 (예: https://mallang-backend.onrender.com)
-  API_BASE: API_BASE,
+  API_BASE: "https://mallangtest.onrender.com",
 
   // ⚠️ 임시 샘플 목록입니다. 실제 지역/직종 목록으로 교체해주세요.
   REGIONS: [
@@ -113,7 +108,7 @@ function initLoginPage() {
   }
 
   goSignupBtn?.addEventListener("click", () => {
-    window.location.href = "/signup";
+    window.location.href = "signup.html";
   });
 
   loginBtn?.addEventListener("click", async () => {
@@ -142,7 +137,7 @@ function initLoginPage() {
 
       if (data.checkID) {
         saveSession({ userID, biType: data.biType, locate: data.locate });
-        window.location.href = "/chat";
+        window.location.href = "tanslator.html";
       } else {
         setStatus("이메일 또는 비밀번호가 일치하지 않습니다.");
       }
@@ -160,12 +155,19 @@ function initLoginPage() {
 // ---------------------------------------------------------------
 function setupCustomSelect(wrapId, options) {
   const wrap = document.getElementById(wrapId);
-  if (!wrap) return { getValue: () => "" };
+  if (!wrap) return { getValue: () => "", getPlaceholder: () => "" };
 
   const btn = wrap.querySelector(".csel-btn");
   const valSpan = wrap.querySelector(".csel-val");
   const menu = document.getElementById(`${wrapId}-menu`);
-  const placeholder = valSpan.textContent;
+
+  // 필수 요소가 없으면 안전하게 빈 선택기로 동작
+  if (!btn || !valSpan || !menu) {
+    console.warn(`setupCustomSelect: missing elements for ${wrapId}`);
+    return { getValue: () => "", getPlaceholder: () => (valSpan ? valSpan.textContent : "") };
+  }
+
+  const placeholder = valSpan.textContent || "";
   let selected = "";
 
   menu.innerHTML = "";
@@ -228,7 +230,7 @@ function initSignupPage() {
   }
 
   backBtn?.addEventListener("click", () => {
-    window.location.href = "/login";
+    window.location.href = "login.html";
   });
 
   // 약관 내용 박스는 기본적으로 접어두고, 링크 클릭 시 펼쳐 보여줍니다.
@@ -244,7 +246,7 @@ function initSignupPage() {
   let agreed = false;
   checkWrap?.addEventListener("click", () => {
     agreed = !agreed;
-    checkBox.classList.toggle("checked", agreed);
+    checkBox.classList.toggle("on", agreed);
     signupBtn.disabled = !agreed;
   });
 
@@ -286,7 +288,7 @@ function initSignupPage() {
 
       if (data.checkNewUser) {
         setStatus("가입이 완료되었습니다. 로그인 페이지로 이동합니다.");
-        setTimeout(() => (window.location.href = "/login"), 800);
+        setTimeout(() => (window.location.href = "login.html"), 800);
       } else {
         setStatus("이미 가입된 이메일입니다.");
         signupBtn.disabled = false;
@@ -314,10 +316,19 @@ function populateSelect(selectEl, options, currentValue) {
 }
 
 function appendMessage(chatInner, chatArea, role, text) {
+  const row = document.createElement("div");
+  row.className = role === "user" ? "msg-row user" : "msg-row";
+
+  const body = document.createElement("div");
+  body.className = "msg-body";
+
   const bubble = document.createElement("div");
-  bubble.className = role === "user" ? "msg msg-user" : "msg msg-ai";
+  bubble.className = role === "user" ? "bubble user" : "bubble bot";
   bubble.textContent = text;
-  chatInner.appendChild(bubble);
+
+  body.appendChild(bubble);
+  row.appendChild(body);
+  chatInner.appendChild(row);
   chatArea.scrollTop = chatArea.scrollHeight;
 }
 
@@ -325,7 +336,7 @@ function initChatPage() {
   const session = loadSession();
   if (!session || !session.userID) {
     // 로그인 안 된 상태로 접근 시 로그인 페이지로
-    window.location.href = "/login";
+    window.location.href = "login.html";
     return;
   }
 
@@ -374,18 +385,32 @@ function initChatPage() {
   // 프로필 드롭다운 열고 닫기
   profBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
-    profBtn.classList.toggle("closed");
+    const isOpen = profBtn.classList.contains("op");
+    if (isOpen) {
+      profBtn.classList.remove("op");
+      profBtn.classList.add("cl");
+      if (profDropdown) profDropdown.classList.remove("open");
+    } else {
+      profBtn.classList.remove("cl");
+      profBtn.classList.add("op");
+      if (profDropdown) profDropdown.classList.add("open");
+    }
   });
   document.addEventListener("click", (e) => {
-    if (profBtn && !profBtn.contains(e.target) && !profDropdown.contains(e.target)) {
-      profBtn.classList.add("closed");
+    // profDropdown가 없을 수 있으므로 안전하게 검사
+    const clickedInsideProfBtn = profBtn && profBtn.contains(e.target);
+    const clickedInsideProfDropdown = profDropdown && profDropdown.contains(e.target);
+    if (profBtn && !clickedInsideProfBtn && !clickedInsideProfDropdown) {
+      profBtn.classList.remove("op");
+      profBtn.classList.add("cl");
+      if (profDropdown) profDropdown.classList.remove("open");
     }
   });
 
   // 로그아웃
   logoutBtn?.addEventListener("click", () => {
     clearSession();
-    window.location.href = "/login";
+    window.location.href = "login.html";
   });
 
   // 새 채팅: 화면의 대화만 초기화 (서버에 저장된 대화가 없으므로 별도 API 호출 불필요)
