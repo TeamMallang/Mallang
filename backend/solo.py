@@ -4,43 +4,14 @@ from pydantic import BaseModel
 from typing import Optional
 import json
 import os
-import firebase_admin
-from firebase_admin import credentials, firestore
-# 다른 개발자분이 짜둔 soften.py 파일에서 변환 함수를 가져옵니다.
-from soften import process_soften_language
+from .soften import process_soften_language
+from .firebase_utils import db
 
 app = FastAPI()
 
-# ==========================================
-# [서버 연결 테스트용 기본 엔드포인트]
-# ==========================================
-# Render 주소(https://...onrender.com)로 직접 접속했을 때 404 에러가 나는 것을 방지합니다.
 @app.get("/")
 async def root():
     return {"status": "ok", "message": "Mallang Backend server is running!"}
-
-
-# ==========================================
-# [파이어베이스 연결 설정]
-# ==========================================
-# 배포 환경(Render)에서는 FIREBASE_CREDENTIALS_JSON 환경변수(JSON 전체를 문자열로)를 우선 사용하고,
-# 로컬 개발 중이라 환경변수가 없으면 같은 폴더의 firebase_config.json 파일을 사용합니다.
-try:
-    firebase_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
-    if firebase_json:
-        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-        cred = credentials.Certificate(
-            os.path.join(BASE_DIR, "firebase_config.json")
-        )
-    else:
-        cred = credentials.Certificate("firebase_config.json")
-    if not firebase_admin._apps:
-        firebase_admin.initialize_app(cred)
-
-    db = firestore.client()
-except Exception as e:
-    print(f"파이어베이스 초기화 실패 (FIREBASE_CREDENTIALS_JSON 환경변수 또는 firebase_config.json 파일을 확인하세요): {e}")
 
 # -----------------------------------------------------------------
 # 바로 아랫줄 ['http://~'] 여기에 프론트엔드 주소를 넣으세요.
@@ -172,5 +143,4 @@ async def check_id_duplication(data: IdCheckRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    # 외부 로컬 접속 및 프론트 통신을 원활하게 하기 위해 host를 "0.0.0.0"으로 변경했습니다.
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("solo:app", host="0.0.0.0", port=8000, reload=True)
