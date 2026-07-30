@@ -78,7 +78,9 @@ async def soften_language(data: ChatRequest):
 async def login_user(data: LoginRequest):
     try:
         # 파이어베이스의 'users' 컬렉션에서 프론트엔드가 보낸 userID 문서를 조회(불러오기)합니다.
-        user_doc = db.collection("users").document(data.userID).get()
+        user_doc = await asyncio.to_thread(
+            lambda: db.collection("users").document(data.userID).get()
+        )
         
         # 1. 가입되지 않은 아이디인 경우
         if not user_doc.exists:
