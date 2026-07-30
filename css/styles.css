@@ -104,7 +104,7 @@ button {
 
 .lbl   { font-size: 11px; font-weight: 500; color: var(--text-light); text-transform: uppercase; letter-spacing: .12em; font-family: var(--font-accent); margin-bottom: 20px; }
 .lhead { font-size: clamp(36px, 5vw, 62px); font-weight: 800; font-family: var(--font-accent); color: var(--text-light); line-height: 1.15; letter-spacing: -.03em; margin-bottom: 20px; }
-.lsub  { font-size: 14px; color: rgba(247,247,255,.6); font-family: 'Noto Sans KR', sans-serif; line-height: 1.7; max-width: 280px; }
+.lsub  { font-size: 14px; color: rgba(247,247,255,.6); font-family: 'Noto Sans KR', sans-serif; line-height: 1.7; max-width: 400px; word-break: keep-all; }
 .lfoot { font-size: 11px; color: rgba(247,247,255,.35); font-family: var(--font-accent); position: relative; z-index: 1; }
 
 .back-btn {
