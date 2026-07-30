@@ -40,7 +40,9 @@ DB_TIMEOUT = 10.0
 class ChatRequest(BaseModel):
     screen: str          # 어디 화면에 있는가 (예: "채팅창")
     message: str         # 채팅 정보
-    userID: str          # ID (지역이랑 직군 정보 포함)
+    userID: str          # ID
+    biType: Optional[str] = "알 수 없음"  # 직군 정보 추가
+    locate: Optional[str] = "알 수 없음"  # 지역 정보 추가
 
 # 2) 로그인 데이터 구조
 class LoginRequest(BaseModel):
@@ -68,6 +70,7 @@ class IdCheckRequest(BaseModel):
 async def soften_language(data: ChatRequest):
     try:
         # 프론트엔드에서 받은 데이터를 AI 개발자가 만든 soften.py 함수로 통째로 토스합니다.
+        # ChatRequest에 추가된 biType과 locate 정보가 포함되어 전달됩니다.
         ai_response = process_soften_language(data)
 
         # 프론트가 요구한 변수명인 'returnMessage'에 AI 피드백 답변을 담아 반환합니다.
