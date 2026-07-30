@@ -3,5 +3,6 @@ services:
     name: mallang-backend
     runtime: python
     rootDir: backend
+    autoDeployTrigger: commit
     buildCommand: "pip install -r requirements.txt"
     startCommand: "uvicorn solo:app --host 0.0.0.0 --port $PORT"
