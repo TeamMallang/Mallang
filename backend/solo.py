@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
+import asyncio
 import json
 import os
 
@@ -26,6 +27,9 @@ app.add_middleware(
     allow_methods=["*"],  # 모든 HTTP 메서드 허용 (GET, POST 등)
     allow_headers=["*"],  # 모든 HTTP 헤더 허용
 )
+
+# DB 호출 하나당 대기할 최대 시간(초). 이 시간 넘으면 504로 즉시 응답합니다.
+DB_TIMEOUT = 10.0
 
 
 # ==========================================
@@ -65,10 +69,10 @@ async def soften_language(data: ChatRequest):
     try:
         # 프론트엔드에서 받은 데이터를 AI 개발자가 만든 soften.py 함수로 통째로 토스합니다.
         ai_response = process_soften_language(data)
-        
+
         # 프론트가 요구한 변수명인 'returnMessage'에 AI 피드백 답변을 담아 반환합니다.
         return {"returnMessage": ai_response}
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"언어 변환 처리 중 에러: {str(e)}")
 
@@ -77,30 +81,34 @@ async def soften_language(data: ChatRequest):
 @app.post("/api/login")
 async def login_user(data: LoginRequest):
     try:
-        # 파이어베이스의 'users' 컬렉션에서 프론트엔드가 보낸 userID 문서를 조회(불러오기)합니다.
-        user_doc = await asyncio.to_thread(
-            lambda: db.collection("users").document(data.userID).get()
+        # Firestore 동기 호출을 별도 쓰레드로 돌려서 이벤트 루프가 멈추지 않게 하고,
+        # DB_TIMEOUT초 안에 응답이 없으면 즉시 타임아웃 처리합니다.
+        user_doc = await asyncio.wait_for(
+            asyncio.to_thread(
+                lambda: db.collection("users").document(data.userID).get()
+            ),
+            timeout=DB_TIMEOUT,
         )
-        
+
         # 1. 가입되지 않은 아이디인 경우
         if not user_doc.exists:
             return {"checkID": False, "biType": None, "locate": None}
-        
+
         # 2. 아이디가 존재하면 DB 안의 데이터(비밀번호, 직군, 지역)를 딕셔너리로 다 불러옵니다.
         user_data = user_doc.to_dict()
-        
+
         # 3. 프론트가 입력한 비밀번호와 DB에 저장되어 있던 비밀번호를 대조합니다.
         if user_data.get("password") == data.password:
-            # [로그인 성공] 결과(checkID: True)와 함께 DB에서 꺼내온 직군(biType)과 지역(locate)을 프론트에 넘겨줍니다!
             return {
                 "checkID": True,
                 "biType": user_data.get("biType"),
-                "locate": user_data.get("locate")
+                "locate": user_data.get("locate"),
             }
         else:
-            # 비밀번호 불일치로 실패 시 정보는 비워서 보냅니다.
             return {"checkID": False, "biType": None, "locate": None}
-            
+
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=504, detail="로그인 처리 중 DB 응답 시간 초과")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"로그인 처리 중 DB 에러: {str(e)}")
 
@@ -109,22 +117,35 @@ async def login_user(data: LoginRequest):
 @app.post("/api/register")
 async def register_user(data: RegisterRequest):
     try:
-        # 가입 버튼을 누르기 전에 중복 확인을 안 했을 상황을 대비해 DB에서 한 번 더 ID 확인을 거칩니다.
         user_ref = db.collection("users").document(data.userID)
-        
-        # 이미 존재하는 아이디라면 가입을 실패시키고 프론트 66번 에러 대응용 코드("error")를 전송합니다.
-        if user_ref.get().exists:
+
+        # 중복 확인 (동기 호출 -> 쓰레드로 분리 + 타임아웃)
+        existing = await asyncio.wait_for(
+            asyncio.to_thread(lambda: user_ref.get()),
+            timeout=DB_TIMEOUT,
+        )
+
+        if existing.exists:
             return {"checkNewUser": False, "errorType": "error"}
-        
-        # 중복이 아니라면 파이어베이스 Firestore 데이터베이스에 회원 정보를 칸칸이 저장합니다.
-        user_ref.set({
-            "password": data.password,
-            "biType": data.biType,
-            "locate": data.locate
-        })
-        
+
+        # 신규 저장 (동기 호출 -> 쓰레드로 분리 + 타임아웃)
+        await asyncio.wait_for(
+            asyncio.to_thread(
+                lambda: user_ref.set(
+                    {
+                        "password": data.password,
+                        "biType": data.biType,
+                        "locate": data.locate,
+                    }
+                )
+            ),
+            timeout=DB_TIMEOUT,
+        )
+
         return {"checkNewUser": True, "errorType": None}
-            
+
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=504, detail="회원가입 처리 중 DB 응답 시간 초과")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"회원가입 처리 중 DB 에러: {str(e)}")
 
@@ -133,13 +154,19 @@ async def register_user(data: RegisterRequest):
 @app.post("/api/check-id")
 async def check_id_duplication(data: IdCheckRequest):
     try:
-        # 파이어베이스 데이터베이스에 이 ID를 가진 문서가 등록되어 있는지 검사합니다.
-        user_doc = db.collection("users").document(data.userID).get()
-        
-        # 문서가 존재하지 않아야(not exists) 비어있는 아이디이므로 chechIDok에 True(사용 가능)를 반환합니다.
+        user_doc = await asyncio.wait_for(
+            asyncio.to_thread(
+                lambda: db.collection("users").document(data.userID).get()
+            ),
+            timeout=DB_TIMEOUT,
+        )
+
         is_available = not user_doc.exists
-        
+
         return {"chechIDok": is_available}
+
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=504, detail="ID 중복확인 중 DB 응답 시간 초과")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"ID 중복확인 중 DB 에러: {str(e)}")
 
