@@ -7,9 +7,14 @@
 // ---------------------------------------------------------------
 // 0. 공통 설정
 // ---------------------------------------------------------------
+const API_BASE =
+    window.location.hostname === "localhost"
+        ? "http://localhost:8000"
+        : "https://mallangtest.onrender.com";
+
 const CONFIG = {
   // TODO: 배포 시 실제 백엔드 주소로 교체하세요 (예: https://mallang-backend.onrender.com)
-  API_BASE: "https://mallangtest.onrender.com",
+  API_BASE: API_BASE,
 
   // ⚠️ 임시 샘플 목록입니다. 실제 지역/직종 목록으로 교체해주세요.
   REGIONS: [
