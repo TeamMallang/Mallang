@@ -4,8 +4,8 @@ from pydantic import BaseModel
 from typing import Optional
 import json
 import os
-from .soften import process_soften_language
-from .firebase_utils import db
+from soften import process_soften_language
+from firebase_utils import db
 
 app = FastAPI()
 
