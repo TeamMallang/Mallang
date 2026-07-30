@@ -26,6 +26,44 @@ body.dark {
   --border-color: rgba(127, 127, 255, 0.15);
 }
 
+body.dark .t-header {
+  background: rgba(0, 0, 32, 0.85);
+  border-bottom-color: rgba(127, 127, 255, 0.1);
+}
+
+body.dark .bubble.bot {
+  background: rgba(127, 127, 255, 0.08);
+  color: #c8c8ff;
+  border-color: rgba(127, 127, 255, 0.1);
+}
+
+body.dark .input-box, 
+body.dark .chip,
+body.dark .nsel {
+  background: rgba(127, 127, 255, 0.05);
+  border-color: rgba(127, 127, 255, 0.1);
+  color: #c8c8ff;
+}
+
+body.dark .chat-ta {
+  color: #c8c8ff;
+}
+
+body.dark .prof-btn.cl {
+  background: rgba(127, 127, 255, 0.1);
+  color: #c8c8ff;
+}
+
+body.dark .new-btn {
+  background: rgba(127, 127, 255, 0.1);
+  color: #c8c8ff;
+}
+
+body.dark .dd-hr {
+  background: rgba(127, 127, 255, 0.1);
+}
+
+
 /* Base Styles */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }

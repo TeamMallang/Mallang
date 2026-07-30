@@ -49,6 +49,8 @@ export function initChatPage() {
   const pdName = document.querySelector(".pd-name");
   const pdEmail = document.querySelector(".pd-email");
   const convList = document.getElementById("conv-list");
+  const btnLight = document.getElementById("btn-light");
+  const btnDark = document.getElementById("btn-dark");
 
   const hRegion = document.getElementById("h-region");
   const hJob = document.getElementById("h-job");
@@ -72,7 +74,45 @@ export function initChatPage() {
   if (pdName) pdName.textContent = displayName;
   if (pdEmail) pdEmail.textContent = session.userID;
 
-  if (convList) convList.innerHTML = "";
+  // Theme handling
+  const savedTheme = localStorage.getItem("mallang_theme") || "light";
+  if (savedTheme === "dark") document.body.classList.add("dark");
+
+  btnLight?.addEventListener("click", () => {
+    document.body.classList.remove("dark");
+    localStorage.setItem("mallang_theme", "light");
+  });
+  btnDark?.addEventListener("click", () => {
+    document.body.classList.add("dark");
+    localStorage.setItem("mallang_theme", "dark");
+  });
+
+  // Load recent conversations (mock data for now)
+  if (convList) {
+    convList.innerHTML = "";
+    const mockConvs = [
+      "회의 참석 여부 문의",
+      "업무 분담 요청",
+      "퇴근 시간 확인"
+    ];
+    mockConvs.forEach(title => {
+      const item = document.createElement("button");
+      item.className = "dd-item";
+      item.style.paddingLeft = "20px";
+      item.textContent = title;
+      item.addEventListener("click", () => {
+        chatInner.innerHTML = "";
+        appendMessage(chatInner, chatArea, "user", title);
+        appendMessage(chatInner, chatArea, "ai", `"${title}"에 대한 이전 대화 내용을 불러왔습니다. (데모)`);
+        if (profDropdown) {
+          profDropdown.classList.remove("open");
+          profBtn.classList.remove("op");
+          profBtn.classList.add("cl");
+        }
+      });
+      convList.appendChild(item);
+    });
+  }
 
   profBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
