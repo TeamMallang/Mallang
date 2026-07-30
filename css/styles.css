@@ -629,8 +629,3 @@ button {
   color: rgba(255, 255, 255, 0.5);
   margin-top: 2px;
 }
-
-/* ── prof-dropdown is an alias for prof-dd ── */
-.prof-dropdown {
-  /* inherits all styles from .prof-dd */
-}
