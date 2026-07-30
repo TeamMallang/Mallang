@@ -138,6 +138,10 @@ body {
 .terms-box.open { display: block; }
 .terms-ttl { font-size: 13px; font-weight: 600; color: #000020; margin-bottom: 8px; }
 
+/* ── 상태 메시지 ── */
+.status-msg { font-size: 13px; color: rgba(0,0,32,.55); font-family: 'Noto Sans KR', sans-serif; margin-top: 10px; min-height: 18px; text-align: center; }
+body.dark .status-msg { color: rgba(127,127,255,.6); }
+
 /* ── 번역기 레이아웃 ── */
 .t-header {
   position: sticky; top: 0; z-index: 40; height: 64px;

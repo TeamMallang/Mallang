@@ -9,6 +9,6 @@
   "rewrites": [
     { "source": "/login", "destination": "/html/login.html" },
     { "source": "/signup", "destination": "/html/signup.html" },
-    { "source": "/chat", "destination": "/html/chat.html" }
+    { "source": "/chat", "destination": "/html/tanslator.html" }
   ]
 }

@@ -7,7 +7,7 @@ import os
 import firebase_admin
 from firebase_admin import credentials, firestore
 # 다른 개발자분이 짜둔 soften.py 파일에서 변환 함수를 가져옵니다.
-from soften import process_soften_language
+from ai.soften import process_soften_language
 
 app = FastAPI()
 
@@ -28,10 +28,16 @@ async def root():
 try:
     firebase_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
     if firebase_json:
-        cred = credentials.Certificate(json.loads(firebase_json))
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+        cred = credentials.Certificate(
+            os.path.join(BASE_DIR, "firebase_config.json")
+        )
     else:
         cred = credentials.Certificate("firebase_config.json")
-    firebase_admin.initialize_app(cred)
+    if not firebase_admin._apps:
+        firebase_admin.initialize_app(cred)
+
     db = firestore.client()
 except Exception as e:
     print(f"파이어베이스 초기화 실패 (FIREBASE_CREDENTIALS_JSON 환경변수 또는 firebase_config.json 파일을 확인하세요): {e}")

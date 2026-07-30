@@ -14,7 +14,7 @@ from openai import OpenAI
 _client = None
 
 
-def _get_client():
+def _get_client() -> OpenAI:
     global _client
     if _client is None:
         api_key = os.environ.get("NVIDIA_API_KEY")
@@ -26,6 +26,7 @@ def _get_client():
         _client = OpenAI(
             base_url="https://integrate.api.nvidia.com/v1",
             api_key=api_key,
+            timeout=30,
         )
     return _client
 
@@ -36,6 +37,11 @@ SYSTEM_PROMPT = (
     "직장에서 통용되는 부드럽고 전문적인 언어로 자연스럽게 바꿔주세요. "
     "원래 의미와 요청 사항은 유지하되, 어투만 정중하고 완곡하게 바꿉니다. "
     "번역 결과 문장만 출력하고, 별도의 설명이나 부연은 덧붙이지 마세요."
+    "욕설은 완곡하게 변경."
+    "존댓말 유지."
+    "설명 금지."
+    "따옴표 금지."
+    "절대 내용을 추가하지 말 것.
 )
 
 
@@ -56,9 +62,9 @@ def process_soften_language(data) -> str:
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": message},
         ],
-        temperature=0.7,
+        temperature=0.3,
         top_p=1,
-        max_tokens=512,
+        max_tokens=256,
         stream=False,
     )
 

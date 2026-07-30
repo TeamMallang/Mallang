@@ -108,7 +108,7 @@ function initLoginPage() {
   }
 
   goSignupBtn?.addEventListener("click", () => {
-    window.location.href = "/signup";
+    window.location.href = "signup.html";
   });
 
   loginBtn?.addEventListener("click", async () => {
@@ -137,7 +137,7 @@ function initLoginPage() {
 
       if (data.checkID) {
         saveSession({ userID, biType: data.biType, locate: data.locate });
-        window.location.href = "/chat";
+        window.location.href = "tanslator.html";
       } else {
         setStatus("이메일 또는 비밀번호가 일치하지 않습니다.");
       }
@@ -230,7 +230,7 @@ function initSignupPage() {
   }
 
   backBtn?.addEventListener("click", () => {
-    window.location.href = "/login";
+    window.location.href = "login.html";
   });
 
   // 약관 내용 박스는 기본적으로 접어두고, 링크 클릭 시 펼쳐 보여줍니다.
@@ -246,7 +246,7 @@ function initSignupPage() {
   let agreed = false;
   checkWrap?.addEventListener("click", () => {
     agreed = !agreed;
-    checkBox.classList.toggle("checked", agreed);
+    checkBox.classList.toggle("on", agreed);
     signupBtn.disabled = !agreed;
   });
 
@@ -288,7 +288,7 @@ function initSignupPage() {
 
       if (data.checkNewUser) {
         setStatus("가입이 완료되었습니다. 로그인 페이지로 이동합니다.");
-        setTimeout(() => (window.location.href = "/login"), 800);
+        setTimeout(() => (window.location.href = "login.html"), 800);
       } else {
         setStatus("이미 가입된 이메일입니다.");
         signupBtn.disabled = false;
@@ -316,10 +316,19 @@ function populateSelect(selectEl, options, currentValue) {
 }
 
 function appendMessage(chatInner, chatArea, role, text) {
+  const row = document.createElement("div");
+  row.className = role === "user" ? "msg-row user" : "msg-row";
+
+  const body = document.createElement("div");
+  body.className = "msg-body";
+
   const bubble = document.createElement("div");
-  bubble.className = role === "user" ? "msg msg-user" : "msg msg-ai";
+  bubble.className = role === "user" ? "bubble user" : "bubble bot";
   bubble.textContent = text;
-  chatInner.appendChild(bubble);
+
+  body.appendChild(bubble);
+  row.appendChild(body);
+  chatInner.appendChild(row);
   chatArea.scrollTop = chatArea.scrollHeight;
 }
 
@@ -327,7 +336,7 @@ function initChatPage() {
   const session = loadSession();
   if (!session || !session.userID) {
     // 로그인 안 된 상태로 접근 시 로그인 페이지로
-    window.location.href = "/login";
+    window.location.href = "login.html";
     return;
   }
 
@@ -376,21 +385,32 @@ function initChatPage() {
   // 프로필 드롭다운 열고 닫기
   profBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
-    profBtn.classList.toggle("closed");
+    const isOpen = profBtn.classList.contains("op");
+    if (isOpen) {
+      profBtn.classList.remove("op");
+      profBtn.classList.add("cl");
+      if (profDropdown) profDropdown.classList.remove("open");
+    } else {
+      profBtn.classList.remove("cl");
+      profBtn.classList.add("op");
+      if (profDropdown) profDropdown.classList.add("open");
+    }
   });
   document.addEventListener("click", (e) => {
     // profDropdown가 없을 수 있으므로 안전하게 검사
     const clickedInsideProfBtn = profBtn && profBtn.contains(e.target);
     const clickedInsideProfDropdown = profDropdown && profDropdown.contains(e.target);
     if (profBtn && !clickedInsideProfBtn && !clickedInsideProfDropdown) {
-      profBtn.classList.add("closed");
+      profBtn.classList.remove("op");
+      profBtn.classList.add("cl");
+      if (profDropdown) profDropdown.classList.remove("open");
     }
   });
 
   // 로그아웃
   logoutBtn?.addEventListener("click", () => {
     clearSession();
-    window.location.href = "/login";
+    window.location.href = "login.html";
   });
 
   // 새 채팅: 화면의 대화만 초기화 (서버에 저장된 대화가 없으므로 별도 API 호출 불필요)
