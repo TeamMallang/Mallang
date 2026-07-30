@@ -4,7 +4,7 @@
     { "source": "/", "destination": "/login", "permanent": false },
     { "source": "/login.html", "destination": "/login", "permanent": true },
     { "source": "/signup.html", "destination": "/signup", "permanent": true },
-    { "source": "/chat.html", "destination": "/chat", "permanent": true }
+    { "source": "/tanslator.html", "destination": "/chat", "permanent": true }
   ],
   "rewrites": [
     { "source": "/login", "destination": "/html/login.html" },
