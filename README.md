@@ -120,7 +120,7 @@ uvicorn solo:app --host 0.0.0.0 --port 8000 --reload
 
 #### **[AI 사용 내역]**
 
-<!-- TODO: 개발 과정(코드 작성/리뷰 등)에서 사용한 AI 툴을 나열해주세요. 예: Claude, ChatGPT 등 -->
+Claude, Gemini, Copilot
 
 ---
 
