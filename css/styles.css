@@ -132,12 +132,32 @@ button {
 }
 .form-wrap { width: 100%; max-width: 360px; padding: 24px 0; }
 
-.logo-l  { height: 40px; width: auto; object-fit: contain; border-radius: 10px; }
-.logo-sm { height: 30px; width: auto; object-fit: contain; border-radius: 8px; }
+/* 로고: 기본은 light_logo.png, 다크모드(body.dark)에서는 dark_logo.png 로 자동 교체됨.
+   <img src="..."> 는 CSS만으로 src 교체가 불가능하므로,
+   HTML에서는 <span class="logo-l" role="img" aria-label="말랑"></span> 형태로 사용하세요. */
+.logo-l,
+.logo-sm {
+  display: inline-block;
+  background-image: url('../assets/light_logo.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: left center;
+  border-radius: 10px;
+}
+.logo-l  { height: 40px; width: 140px; }   /* 실제 로고 가로세로 비율에 맞게 width 조정 */
+.logo-sm { height: 30px; width: 105px; border-radius: 8px; }
 
+/* 다크모드 전환 시 로고 교체 */
+body.dark .logo-l,
+body.dark .logo-sm {
+  background-image: url('../assets/dark_logo.png');
+}
+
+/* 로그인/회원가입 좌측 패널(auth-left)은 라이트/다크 모드와 무관하게
+   배경이 항상 어두운 네이비이므로, 다크 배경용 로고를 고정으로 사용 */
 .auth-left .logo-l,
 .auth-left .logo-sm {
-  filter: brightness(0) invert(1);
+  background-image: url('../assets/dark_logo.png');
 }
 
 .lbl   { font-size: 11px; font-weight: 500; color: var(--text-light); text-transform: uppercase; letter-spacing: .12em; font-family: var(--font-accent); margin-bottom: 20px; }
